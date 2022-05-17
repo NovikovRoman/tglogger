@@ -1,6 +1,6 @@
 # TgLogger
 
-> Логирование в telegram канал.
+> Логирование в telegram чаты, каналы.
 
 ```go
 package main
@@ -22,7 +22,7 @@ func main() {
 	)
 
 	token := "12…:42…asd"
-	channelID := int64(-10123456789)
+	chatID := int64(-10123456789)
 
 	// Отправка с помощью gopkg.in/telebot.v3
 	pref := telebot.Settings{
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	tgLog := tglogger.NewTeleBotLogger(teleBot, channelID)
+	tgLog := tglogger.NewTeleBotLogger(teleBot, chatID)
 
 	// Можно отреагировать на ошибку отправки.
 	if msg, err = tgLog.Error("test error teleBot", nil); err != nil {
@@ -46,7 +46,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	tgLog = tglogger.NewBotApiLogger(botAPI, channelID)
+	tgLog = tglogger.NewBotApiLogger(botAPI, chatID)
 	// Можно отреагировать на ошибку отправки.
 	if msg, err = tgLog.Error("test error botAPI", nil); err != nil {
 		log.Println(err, msg)

@@ -7,26 +7,26 @@ import (
 )
 
 type Logger struct {
-	teleBot   *telebot.Bot
-	botAPI    *tgbotapi.BotAPI
-	prefix    string
-	channelID int64
-	level     Level
+	teleBot *telebot.Bot
+	botAPI  *tgbotapi.BotAPI
+	prefix  string
+	chatID  int64
+	level   Level
 }
 
 // NewTeleBotLogger https://github.com/tucnak/telebot
-func NewTeleBotLogger(bot *telebot.Bot, channelID int64) *Logger {
+func NewTeleBotLogger(bot *telebot.Bot, chatID int64) *Logger {
 	return &Logger{
-		teleBot:   bot,
-		channelID: channelID,
+		teleBot: bot,
+		chatID:  chatID,
 	}
 }
 
 // NewBotApiLogger https://github.com/go-telegram-bot-api/telegram-bot-api
-func NewBotApiLogger(bot *tgbotapi.BotAPI, channelID int64) *Logger {
+func NewBotApiLogger(bot *tgbotapi.BotAPI, chatID int64) *Logger {
 	return &Logger{
-		botAPI:    bot,
-		channelID: channelID,
+		botAPI: bot,
+		chatID: chatID,
 	}
 }
 
@@ -100,14 +100,13 @@ func (l *Logger) send(level Level, msg string, fields Fields) (string, error) {
 	}
 
 	if l.botAPI != nil {
-		m := tgbotapi.NewMessage(l.channelID, msg)
+		m := tgbotapi.NewMessage(l.chatID, msg)
 		m.ParseMode = tgbotapi.ModeMarkdown
 		_, err = l.botAPI.Send(m)
 
 	} else if l.teleBot != nil {
 		chat := &telebot.Chat{
-			ID:   l.channelID,
-			Type: telebot.ChatChannel,
+			ID: l.chatID,
 		}
 		_, err = l.teleBot.Send(chat, msg, telebot.ModeMarkdown)
 	}
