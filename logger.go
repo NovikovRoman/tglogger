@@ -96,7 +96,7 @@ func (l *Logger) send(level Level, msg string, fields Fields) (string, error) {
 	}
 
 	if len(fields) > 0 {
-		msg += fmt.Sprintf("```%s```", fields)
+		msg += fmt.Sprintf("```\n%s```", fields)
 	}
 
 	if l.botAPI != nil {
