@@ -28,6 +28,7 @@ func New(pref Settings) (l *Logger, err error) {
 	l = &Logger{
 		chatID: pref.ChatID,
 		prefix: pref.Prefix,
+		level:  TraceLevel,
 	}
 
 	l.bot, err = newBot(pref)
@@ -89,22 +90,23 @@ func (l *Logger) Trace(msg string, fields Fields) (string, error) {
 func (l *Logger) send(level Level, msg string, fields Fields) (string, error) {
 	var err error
 
-	if level < l.level {
+	if level > l.level {
 		return "", nil
 	}
 
-	msg = level.String() + " " + msg
+	msg = fmt.Sprintf("%s %s", level, msg)
 
 	if l.prefix != "" {
-		msg = "_" + l.prefix + ":_ " + msg
+		msg = fmt.Sprintf("_%s:_ %s", l.prefix, msg)
 	}
 
 	if len(fields) > 0 {
-		msg += fmt.Sprintf("```\n%s```", fields)
+		msg += fmt.Sprintf("\n```\n%s```", fields)
 	}
 
-	if len(msg) > 2048 {
-		if err = l.bot.sendMessage(l.chatID, string([]rune(msg)[0:1024])+"…"); err != nil {
+	r := []rune(msg)
+	if len(r) > 1100 {
+		if err = l.bot.sendMessage(l.chatID, string(r[0:1024])+"…"); err != nil {
 			return msg, err
 		}
 
