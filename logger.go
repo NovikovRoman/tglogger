@@ -2,32 +2,36 @@ package tglogger
 
 import (
 	"fmt"
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gopkg.in/telebot.v3"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type Logger struct {
-	teleBot *telebot.Bot
-	botAPI  *tgbotapi.BotAPI
-	prefix  string
-	chatID  int64
-	level   Level
+	bot    *bot
+	prefix string
+	chatID int64
+	level  Level
 }
 
-// NewTeleBotLogger https://github.com/tucnak/telebot
-func NewTeleBotLogger(bot *telebot.Bot, chatID int64) *Logger {
-	return &Logger{
-		teleBot: bot,
-		chatID:  chatID,
-	}
+type Settings struct {
+	URL    string
+	Token  string
+	ChatID int64
+	Prefix string
+
+	// HTTP Client used to make requests to telegram api
+	Client *http.Client
 }
 
-// NewBotApiLogger https://github.com/go-telegram-bot-api/telegram-bot-api
-func NewBotApiLogger(bot *tgbotapi.BotAPI, chatID int64) *Logger {
-	return &Logger{
-		botAPI: bot,
-		chatID: chatID,
+func New(pref Settings) (l *Logger, err error) {
+	l = &Logger{
+		chatID: pref.ChatID,
+		prefix: pref.Prefix,
 	}
+
+	l.bot, err = newBot(pref)
+	return
 }
 
 // SetPrefix set message prefix
@@ -92,23 +96,28 @@ func (l *Logger) send(level Level, msg string, fields Fields) (string, error) {
 	msg = level.String() + " " + msg
 
 	if l.prefix != "" {
-		msg = l.prefix + ": " + msg
+		msg = "_" + l.prefix + ":_ " + msg
 	}
 
 	if len(fields) > 0 {
 		msg += fmt.Sprintf("```\n%s```", fields)
 	}
 
-	if l.botAPI != nil {
-		m := tgbotapi.NewMessage(l.chatID, msg)
-		m.ParseMode = tgbotapi.ModeMarkdown
-		_, err = l.botAPI.Send(m)
-
-	} else if l.teleBot != nil {
-		chat := &telebot.Chat{
-			ID: l.chatID,
+	if len(msg) > 2048 {
+		if err = l.bot.sendMessage(l.chatID, string([]rune(msg)[0:1024])+"…"); err != nil {
+			return msg, err
 		}
-		_, err = l.teleBot.Send(chat, msg, telebot.ModeMarkdown)
+
+		f := &file{
+			name:     time.Now().Format("2006-01-02_15:04:05") + "_full.log",
+			caption:  "full log",
+			reader:   strings.NewReader(msg),
+			fileSize: 0,
+		}
+		err = l.bot.sendDocument(l.chatID, f)
+
+	} else {
+		err = l.bot.sendMessage(l.chatID, msg)
 	}
 
 	return msg, err
